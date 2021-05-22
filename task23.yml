@@ -1,0 +1,42 @@
+- hosts: localhost
+  roles:
+  - role: ec2
+
+- hosts: "tag_Name_K8SMaster"
+  roles:
+  - role: K8sMaster
+
+- hosts: "tag_Name_K8SSlave"
+  roles:
+  - role: K8sSlaves
+
+- hosts: "tag_Name_K8SMaster"
+  tasks:
+         - name: "Launching the Wordpress Pod"
+           shell: "kubectl run mywp1 --image=wordpress:5.1.1-php7.3-apache"
+
+         - name: "Launching the MySQL Pod"
+           shell: "kubectl run mydb1 --image=mysql:5.7 --env=MYSQL_ROOT_PASSWORD=redhat  --env=MYSQL_DATABASE=imran_db  --env=MYSQL_USER=imran --env=MYSQL_PASSWORD=redhat"
+
+         - name: "Exposing the port for Wordpress Application"
+           shell: "kubectl expose pods mywp1  --type=NodePort   --port=80"
+           register: wp
+         
+         - debug:
+                 var: "wp.stdout_lines"
+
+
+         - name: "Getting information about the Service kind"
+           shell: "kubectl get svc"
+           register: svc
+
+         - debug:
+                 var: "svc.stdout_lines"
+
+         - name: "Getting the IP of MySQL Pod"
+           shell: "kubectl get pods mydb1 -o wide"
+           register: db_ip
+
+         
+         - debug:
+                   var: "db_ip.stdout_lines"
